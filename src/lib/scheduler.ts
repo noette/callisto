@@ -69,7 +69,9 @@ export class Scheduler {
       schedules = sections.flatMap((section) =>
         schedules
           .map((schedule) => [...schedule, section])
-          .filter((schedule) => !check_overlap(schedule)),
+          .filter(
+            (schedule) => !check_overlap(schedule, options.allow_zeromin),
+          ),
       );
     }
 

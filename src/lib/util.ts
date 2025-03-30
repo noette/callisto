@@ -22,11 +22,14 @@ export function combine_times(sections: Section[]) {
   return combined;
 }
 
-export function check_overlap(sections: Section[]) {
+export function check_overlap(sections: Section[], zeromin = false) {
   const combined = combine_times(sections);
   for (const day of combined.days) {
     for (let i = 0; i < day.length - 1; i++) {
-      if (day[i].end > day[i + 1].start) {
+      if (
+        (!zeromin && day[i].end >= day[i + 1].start) ||
+        day[i].end > day[i + 1].start
+      ) {
         return true;
       }
     }

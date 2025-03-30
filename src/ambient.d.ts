@@ -1,6 +1,7 @@
 type CourseQuery = { code: RegExp };
 type QueryOptions = {
   show_full: boolean;
+  allow_zeromin: boolean;
   exclude_fc: boolean;
   exclude_sg: boolean;
   exclude_sm: boolean;
