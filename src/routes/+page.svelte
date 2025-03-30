@@ -11,6 +11,7 @@
     let courses = $state(["ENEE350"]);
     let options: QueryOptions = $state({
         show_full: false,
+        allow_zeromin: false,
         exclude_fc: true,
         exclude_sg: true,
         exclude_sm: true,
