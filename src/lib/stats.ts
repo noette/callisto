@@ -1,11 +1,4 @@
-import { combine_times } from "./util";
-
-function average(arr: number[]): number | undefined {
-  if (arr.length === 0) {
-    return undefined;
-  }
-  return arr.reduce((a, b) => a + b, 0) / arr.length;
-}
+import { average, combine_times } from "./util";
 
 type Stats = {
   [name: string]: {
