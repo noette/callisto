@@ -1,8 +1,15 @@
+export function average(arr: number[]): number | undefined {
+  if (arr.length === 0) {
+    return undefined;
+  }
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
 export function sort_meeting(a: Meeting, b: Meeting): number {
   return a.start - b.start;
 }
 
-export function combine_times(sections: Section[]) {
+export function combine_times(sections: Section[], remove_duplicates = false) {
   let combined: Meetings = {
     days: [[], [], [], [], [], [], []],
     other: [],
@@ -13,6 +20,16 @@ export function combine_times(sections: Section[]) {
       combined.days[i].push(...section.meetings.days[i]);
     }
     combined.other.push(...section.meetings.other);
+  }
+
+  if (remove_duplicates) {
+    for (let i = 0; i < combined.days.length; i++) {
+      combined.days[i] = [
+        ...new Map(
+          combined.days[i].map((m) => [JSON.stringify(m), m]),
+        ).values(),
+      ];
+    }
   }
 
   for (let i = 0; i < combined.days.length; i++) {
