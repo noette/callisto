@@ -10,10 +10,12 @@ export const config = {
 
 const TERM = "202508";
 
-export const GET: RequestHandler = async ({ url }) => {
-  const code = url.searchParams.get("code");
+export const GET: RequestHandler = async (event) => {
+  console.log('Full event:', event);
+  console.log('URL:', event.url);
+  console.log('Search params:', event.url.searchParams);
+  const code = event.url.searchParams.get("code");
 
-  console.log(`Seats request ${code}`)
 
   if (!code) {
     error(400, "No course code provided");
