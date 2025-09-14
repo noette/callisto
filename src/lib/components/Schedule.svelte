@@ -61,7 +61,7 @@
                 </strong>
                 ({section.open_seats}/{section.seats} seats{section.open_seats ===
                 0
-                    ? `${section.waitlist} waitlist`
+                    ? `, ${section.waitlist} waitlist`
                     : ""})
                 <br />
                 {#if section.instructors.length > 0}
