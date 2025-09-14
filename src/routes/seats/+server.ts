@@ -2,7 +2,7 @@ import { error, json } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
 import { parse } from "node-html-parser";
 
-export const CONFIG = {
+export const config = {
   isr: {
     expiration: 60 * 60,
   },
