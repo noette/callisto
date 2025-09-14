@@ -13,6 +13,8 @@ const TERM = "202508";
 export const GET: RequestHandler = async ({ url }) => {
   const code = url.searchParams.get("code");
 
+  console.log(`Seats request ${code}`)
+
   if (!code) {
     error(400, "No course code provided");
   }
