@@ -17,9 +17,20 @@ export const GET: RequestHandler = async ({ url }) => {
     error(400, "No course code provided");
   }
 
-  const resp = await fetch(
-    `https://app.testudo.umd.edu/soc/${TERM}/sections?courseIds=${code}`,
-  );
+  let resp;
+  try {
+    resp = await fetch(
+      `https://app.testudo.umd.edu/soc/${TERM}/sections?courseIds=${code}`,
+    );
+
+    if (!resp.ok) {
+      console.log(resp.status, resp.body);
+      return {};
+    }
+  } catch (error) {
+    console.log("Error", error);
+    return {};
+  }
   const html = parse(await resp.text());
 
   let ret: {
