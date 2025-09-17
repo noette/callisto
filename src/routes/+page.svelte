@@ -114,8 +114,17 @@
                         <a href="https://beta.umd.io/">umd.io</a>
                     </li>
                     <li>
-                        I do not claim any guarantee on the correctness or
-                        updatedness of these data sources. Do double check on
+                        No guarantee on the correctness or updatedness of these
+                        data sources (especially umd.io open seats data, a bunch
+                        of their other stuff is outdated/broken). Thus also no
+                        guarantee on the correctness of any generated schedules.
+                        Hopefully sometime I'll get around to getting actual
+                        server hosting set up so I can get data myself
+                    </li>
+                    <li>
+                        Also, obviously, statistics can only describe a schedule
+                        so well. I hope the stats and sorting is useful as a
+                        heuristic, but you should also do some consideration on
                         your own.
                     </li>
                 </ul>

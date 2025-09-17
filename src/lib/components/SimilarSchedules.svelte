@@ -93,7 +93,7 @@
 <div class="mt-5 mb-15 grid grid-cols-[1fr_3fr] text-sm gap-3">
     <div class="flex flex-col">
         <p class="mb-2">{schedules.length} similar schedules</p>
-        {#each schedules[0].sections as section, sec_idx}
+        {#each schedules[0].sections as section}
             <div class="mb-2">
                 <strong>
                     <a
@@ -103,29 +103,6 @@
                         {section.course}
                     </a>
                 </strong>
-                ({schedules.reduce(
-                    (a, s) => {
-                        const id = `${s.sections[sec_idx].course}-${s.sections[sec_idx].id}`;
-                        return [
-                            a[0] +
-                                (a[1].has(id)
-                                    ? 0
-                                    : s.sections[sec_idx].open_seats),
-                            a[1].add(id),
-                        ];
-                    },
-                    [0, new Set()],
-                )[0]}/{schedules.reduce(
-                    (a, s) => {
-                        const id = `${s.sections[sec_idx].course}-${s.sections[sec_idx].id}`;
-                        return [
-                            a[0] +
-                                (a[1].has(id) ? 0 : s.sections[sec_idx].seats),
-                            a[1].add(id),
-                        ];
-                    },
-                    [0, new Set()],
-                )[0]} total seats)
                 <br />
                 {#if section.instructors.length > 0}
                     with
