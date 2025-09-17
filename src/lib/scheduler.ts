@@ -7,9 +7,7 @@ export class Scheduler {
   instructors: Instructor[] | undefined;
   grades: { [name: string]: PTGrade[] } = {};
   seats: {
-    [course: string]: {
-      [id: string]: { seats: number; open_seats: number; waitlist: number };
-    };
+    [id: string]: { seats: number; open_seats: number; waitlist: number };
   } = {};
 
   constructor(progress_cb: (msg: string) => void) {
@@ -38,19 +36,17 @@ export class Scheduler {
             .filter((s) => this.pre_fetch_filter(s, options)) ?? [],
       );
 
-      const course_codes = [
-        ...new Set(
-          partial_sections
-            .map((section) => section.course)
-            .filter((id) => !(id in this.seats)),
-        ),
-      ];
+      const section_ids = partial_sections
+        .map((section) => `${section.course}-${section.id}`)
+        .filter((id) => !(id in this.seats));
       const instructors_set = [
         ...new Set(partial_sections.flatMap((s) => s.instructors)),
       ].filter((n) => !(n in this.grades));
       await Promise.all([
-        ...course_codes.map((c) => this.fetch_seats(c)),
-        ...instructors_set.map((n) => this.fetch_grades(n)),
+        section_ids.length > 0 ? this.fetch_seats(section_ids) : [],
+        ...(instructors_set.length > 0
+          ? instructors_set.map((n) => this.fetch_grades(n))
+          : []),
       ]);
 
       const _instructors = this.instructors; // ensure defined
@@ -58,19 +54,15 @@ export class Scheduler {
         .map((s) => ({
           ...s,
           instructors: s.instructors
-            .filter((i) => i !== "Instructor: TBA")
-            .map((n) => _instructors.find((i) => i.name === n) ?? { name: n })
+            .map((n) => _instructors.find((i) => i.name === n))
+            .filter((i) => i !== undefined)
             .map((i) => ({
               ...i,
-              gpa: this.grades[i.name]
-                ? calculate_gpa(
-                    this.grades[i.name].filter(
-                      (sem) => sem.course === s.course,
-                    ),
-                  )
-                : undefined,
+              gpa: calculate_gpa(
+                this.grades[i.name].filter((sem) => sem.course === s.course),
+              ),
             })),
-          ...this.seats[s.course][s.id],
+          ...this.seats[`${s.course}-${s.id}`],
         }))
         .filter((s) => this.post_fetch_filter(s, options));
 
@@ -111,18 +103,26 @@ export class Scheduler {
     const res = await fetch(
       `https://planetterp.com/api/v1/grades?professor=${name}`,
     );
-    if (!res.ok) {
-      return;
-    }
     this.grades[name] = await res.json();
   }
 
-  async fetch_seats(course: string) {
-    this.progress_cb(`Fetching seats data for ${course}...`);
-    const res = await fetch(
-      "/seats?" + new URLSearchParams({ code: course }).toString(),
+  async fetch_seats(section_ids: string[]) {
+    this.progress_cb(
+      `Fetching seats data for ${section_ids[0].slice(0, 7)}...`,
     );
-    this.seats[course] = await res.json();
+    for (let i = 0; i < section_ids.length; i += 40) {
+      const res = await fetch(
+        `https://api.umd.io/v1/courses/sections/${section_ids.slice(i, i + 40).join(",")}`,
+      );
+      const json = await res.json();
+      for (const section of json) {
+        this.seats[section.section_id] = {
+          seats: parseInt(section.seats),
+          open_seats: parseInt(section.open_seats),
+          waitlist: parseInt(section.waitlist),
+        };
+      }
+    }
   }
 
   pre_fetch_filter(section: PartialSection, options: QueryOptions) {
