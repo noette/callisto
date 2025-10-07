@@ -1,5 +1,4 @@
-import { combine_times } from "./meetings";
-import type { Section } from "./scheduler";
+import { combine_times, type Section } from "./scheduler";
 
 type StatsFormatter = {
   [name: string]: {

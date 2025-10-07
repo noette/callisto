@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { combine_times } from "$lib/meetings";
+  import { combine_times } from "$lib/scheduler";
   import { type Section } from "$lib/scheduler";
 
   const HEIGHT = 400;
