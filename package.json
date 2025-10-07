@@ -21,7 +21,6 @@
     "vite": "^7.0.4"
   },
   "dependencies": {
-    "@sveltejs/adapter-vercel": "^5.10.2",
-    "node-html-parser": "^7.0.1"
+    "@sveltejs/adapter-static": "^3.0.10"
   }
 }
