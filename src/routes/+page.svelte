@@ -30,9 +30,7 @@
 
   async function generate() {
     progress = [];
-    const queries = courses.flatMap((c) => {
-      return c.length > 0 ? [{ code: new RegExp(c) }] : [];
-    });
+    const queries = courses.filter((c) => c.length > 0);
     return await scheduler.generate(queries, options);
   }
 
@@ -87,17 +85,16 @@
         {/snippet}
         <p>callisto schedule generator is developed by frederick zheng</p>
         <p>
-          course and instructor indexes from <a
-            href="https://github.com/atcupps/Jupiterp/tree/main/datagen"
+          course and rating data from <a
+            href="https://github.com/Jupiterp-UMD/api"
           >
-            Jupiterp datagen
+            Jupiterp API
           </a>
         </p>
         <p>
           professor GPA data from
           <a href="https://planetterp.com/api/">PlanetTerp</a>
         </p>
-        <p>open seat data is cached hourly</p>
         <p>no guarantees on correctness or up-to-dateness</p>
       </Modal>
     </div>
