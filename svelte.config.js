@@ -13,7 +13,7 @@ const config = {
     // See https://svelte.dev/docs/kit/adapters for more information about adapters.
     adapter: adapter({
       fallback: "src/404.html",
-      output: "build",
+      out: "build",
     }),
     paths: {
       base: process.argv.includes("dev") ? "" : process.env.BASE_PATH,
