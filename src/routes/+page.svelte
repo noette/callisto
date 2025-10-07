@@ -1,179 +1,223 @@
 <script lang="ts">
-    import CourseEntry from "$lib/components/CourseEntry.svelte";
-    import Expandable from "$lib/components/Expandable.svelte";
-    import Modal from "$lib/components/Modal.svelte";
-    import Options from "$lib/components/Options.svelte";
-    import Schedule from "$lib/components/Schedule.svelte";
-    import SimilarSchedules from "$lib/components/SimilarSchedules.svelte";
-    import WeightsEntry from "$lib/components/WeightsEntry.svelte";
-    import { Scheduler } from "$lib/scheduler";
-    import { schedule_stats, STATS } from "$lib/stats";
-    import { average } from "$lib/util";
+  import CourseEntry from "$lib/components/CourseEntry.svelte";
+  import Expandable from "$lib/components/Expandable.svelte";
+  import GroupedSchedules from "$lib/components/GroupedSchedules.svelte";
+  import Modal from "$lib/components/Modal.svelte";
+  import Options from "$lib/components/Options.svelte";
+  import Schedule from "$lib/components/Schedule.svelte";
+  import WeightsEntry from "$lib/components/WeightsEntry.svelte";
+  import { Scheduler, type Section } from "$lib/scheduler";
+  import { average, calculate_stats, STATS, type Stats } from "$lib/stats";
 
-    let courses = $state([""]);
-    let options: QueryOptions = $state({
-        show_full: false,
-        allow_zeromin: false,
-        exclude_fc: true,
-        exclude_sg: true,
-        exclude_sm: true,
+  let courses = $state([""]);
+  let schedules: undefined | Promise<Section[][]> = $state();
+  let show_groups = $state(false);
+  let options = $state({
+    show_full: false,
+    allow_zeromin: false,
+    exclude_fc: true,
+    exclude_sg: true,
+    exclude_sm: true,
+  });
+  let top_n = $state(10);
+  let weights = $state(
+    Object.fromEntries(Object.keys(STATS).map((k) => [k, 1]))
+  );
+
+  let progress: string[] = $state([]);
+  const progress_cb = (msg: string) => (progress = [...progress, msg]);
+  let scheduler = new Scheduler(progress_cb);
+
+  async function generate() {
+    progress = [];
+    const queries = courses.flatMap((c) => {
+      return c.length > 0 ? [{ code: new RegExp(c) }] : [];
     });
-    let weights = $state(
-        Object.fromEntries(Object.keys(STATS).map((k) => [k, 1])),
-    );
+    return await scheduler.generate(queries, options);
+  }
 
-    let progress = $state("");
-    let schedules: Promise<{ sections: Section[]; stats: any }[]> | undefined =
-        $state();
-    let scheduler = new Scheduler((msg) => (progress += msg + "\n"));
+  function group_schedules(schedules: Section[][]) {
+    return Object.values(
+      Object.groupBy(schedules, (schedule) =>
+        schedule
+          .map(
+            (section) =>
+              `${section.course}-${section.instructors.map((i) => i.name).join(",")}`
+          )
+          .join(" ")
+      )
+    ).filter((x) => x !== undefined);
+  }
 
-    let show_top_n = $state(10);
-    function generate() {
-        progress = "";
-        schedules = scheduler
-            .generate_schedules(
-                courses.map((c) => {
-                    return { code: new RegExp(c) };
-                }),
-                options,
-            )
-            .then((res) =>
-                res.map((sections) => ({
-                    sections: sections,
-                    stats: schedule_stats(sections),
-                })),
-            );
-    }
-
-    function overall_score(stats: { [s: string]: number }) {
-        return Object.entries(stats)
-            .map(([k, v]) => weights[k] * STATS[k].normal(v))
-            .reduce((a, b) => a + b, 0);
-    }
-
-    let show_groups = $state(false);
-    function group_schedules(schedules: { sections: Section[] }[]) {
-        return Object.values(
-            Object.groupBy(schedules, (schedule) =>
-                schedule.sections
-                    .map(
-                        (section) =>
-                            `${section.course}-${section.id.substring(0, 2)}-${section.instructors.map((i) => i.name).join(",")}`,
-                    )
-                    .join(" "),
-            ),
-        );
-    }
+  function weighted_score(stats: Stats) {
+    return Object.entries(stats)
+      .map(([k, v]) => weights[k] * STATS[k].normal(v))
+      .reduce((a, b) => a + b, 0);
+  }
 </script>
 
-<div class="grid grid-cols-[300px_1fr] min-h-screen">
-    <div class="p-5">
-        <em class="block mb-5">callisto schedule generator (beta)</em>
-        <div class="my-5">
-            <CourseEntry bind:courses />
-        </div>
-        <div class="my-5">
-            <Expandable title="Extra options">
-                <Options bind:options />
-            </Expandable>
-        </div>
-        <button
-            class="block my-5 bg-umd-red text-white p-2 rounded w-full font-bold"
-            onclick={generate}
-        >
-            Generate
-        </button>
-        <hr class="m-5" />
-        <div class="my-5">
-            <WeightsEntry bind:weights />
-        </div>
-        <div class="my-5">
-            <Modal>
-                {#snippet button()}
-                    <span class="text-gray-400">about</span>
-                {/snippet}
-                <ul class="list-disc ml-5">
-                    <li>
-                        callisto schedule generator is developed by Frederick
-                        Zheng
-                    </li>
-                    <li>
-                        Course and professor rating data is from
-                        <a
-                            href="https://github.com/atcupps/Jupiterp/tree/main/datagen"
-                        >
-                            Jupiterp datagen
-                        </a>
-                    </li>
-                    <li>
-                        Professor GPA data is from
-                        <a href="https://planetterp.com/api/">PlanetTerp</a>
-                    </li>
-                    <li>
-                        Open seats data is from
-                        <a href="https://beta.umd.io/">umd.io</a>
-                    </li>
-                    <li>
-                        No guarantee on the correctness or updatedness of these
-                        data sources (especially umd.io open seats data, a bunch
-                        of their other stuff is outdated/broken). Thus also no
-                        guarantee on the correctness of any generated schedules.
-                        Hopefully sometime I'll get around to getting actual
-                        server hosting set up so I can get data myself
-                    </li>
-                    <li>
-                        Also, obviously, statistics can only describe a schedule
-                        so well. I hope the stats and sorting is useful as a
-                        heuristic, but you should also do some consideration on
-                        your own.
-                    </li>
-                </ul>
-            </Modal>
-        </div>
+<main>
+  <div class="controls">
+    <div><em>callisto schedule generator</em></div>
+
+    <div>
+      <CourseEntry bind:courses submit={() => (schedules = generate())} />
     </div>
 
-    <div class="p-5 bg-gray-100">
-        {#await schedules}
-            <em class="whitespace-pre-line">{progress}</em>
-        {:then schedules}
-            {#if schedules}
-                {@const scored = schedules.map((s) => ({
-                    ...s,
-                    score: overall_score(s.stats),
-                }))}
-                {@const grouped = group_schedules(scored)}
-                <div class="flex gap-4 items-stretch">
-                    <span>
-                        Found {schedules.length} schedules ({grouped.length} similar)
-                    </span>
-                    <span class="border-l-1 border-gray-400"></span>
-                    <label>
-                        Show top
-                        <input
-                            bind:value={show_top_n}
-                            class="bg-white outline outline-gray-400 px-1 w-10 rounded"
-                        />
-                    </label>
-                    <span class="border-l-1 border-gray-400"></span>
-                    <label>
-                        <input type="checkbox" bind:checked={show_groups} />
-                        Group similar schedules
-                    </label>
-                </div>
-                {#if show_groups}
-                    {#each grouped
-                        .toSorted((a, b) => average(b.map((s) => s.score)) - average(a.map((s) => s.score)))
-                        .slice(0, show_top_n) as group}
-                        <SimilarSchedules schedules={group} />
-                    {/each}
-                {:else}
-                    {#each scored
-                        .toSorted((a, b) => b.score - a.score)
-                        .slice(0, show_top_n) as schedule}
-                        <Schedule {schedule} />
-                    {/each}
-                {/if}
-            {/if}
-        {/await}
+    <div>
+      <Expandable title="Extra options">
+        <Options bind:options />
+      </Expandable>
     </div>
-</div>
+
+    <div>
+      <button class="generate" onclick={() => (schedules = generate())}>
+        Generate
+      </button>
+    </div>
+
+    <div>
+      <WeightsEntry bind:weights />
+    </div>
+
+    <div>
+      <Modal>
+        {#snippet button()}
+          <span style:color="#99a1af">about</span>
+        {/snippet}
+        <p>callisto schedule generator is developed by frederick zheng</p>
+        <p>
+          course and instructor indexes from <a
+            href="https://github.com/atcupps/Jupiterp/tree/main/datagen"
+          >
+            Jupiterp datagen
+          </a>
+        </p>
+        <p>
+          professor GPA data from
+          <a href="https://planetterp.com/api/">PlanetTerp</a>
+        </p>
+        <p>open seat data is cached hourly</p>
+        <p>no guarantees on correctness or up-to-dateness</p>
+      </Modal>
+    </div>
+  </div>
+
+  <div class="schedules">
+    {#await schedules}
+      <div class="progress">
+        <strong>Generating...</strong>
+        {#each progress as msg}
+          <span>{msg}</span>
+        {/each}
+      </div>
+    {:then schedules}
+      {#if schedules !== undefined}
+        {@const groups = group_schedules(schedules)}
+
+        <div>
+          <span>
+            Found {schedules.length} schedules ({groups.length} similar)
+          </span>
+          <span class="horizontal-divider"></span>
+          Show top <input class="top-n" bind:value={top_n} />
+          <span class="horizontal-divider"></span>
+          <label>
+            <input type="checkbox" bind:checked={show_groups} />
+            Group similar schedules
+          </label>
+        </div>
+
+        {#if show_groups}
+          {@const scored_groups = groups
+            .map((g) => {
+              const stats = g.map(calculate_stats);
+              const scores = stats.map(weighted_score);
+              return {
+                schedules: g,
+                stats: stats,
+                scores: scores,
+                score: average(scores) ?? 0,
+              };
+            })
+            .sort((a, b) => b.score - a.score)}
+          {#each scored_groups.slice(0, top_n) as group}
+            {@const sort_indices = group.schedules
+              .map((_, i) => i)
+              .sort((a, b) => group.scores[b] - group.scores[a])}
+            <div class="schedule-container">
+              <GroupedSchedules
+                schedules={sort_indices.map((i) => group.schedules[i])}
+                stats={sort_indices.map((i) => group.stats[i])}
+                scores={sort_indices.map((i) => group.scores[i])}
+                score={group.score}
+              />
+            </div>
+          {/each}
+        {:else}
+          {@const scored_schedules = schedules
+            .map((s) => {
+              const stats = calculate_stats(s);
+              return {
+                schedule: s,
+                stats: stats,
+                score: weighted_score(stats),
+              };
+            })
+            .sort((a, b) => b.score - a.score)}
+          {#each scored_schedules.slice(0, top_n) as s}
+            <div class="schedule-container">
+              <Schedule schedule={s.schedule} stats={s.stats} score={s.score} />
+            </div>
+          {/each}
+        {/if}
+      {/if}
+    {/await}
+  </div>
+</main>
+
+<style>
+  main {
+    min-height: 100vh;
+    display: flex;
+  }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+    gap: 1.25rem;
+    width: 25%;
+  }
+  .schedules {
+    background: #f3f4f6;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+    padding: 1.25rem;
+  }
+  .generate {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--color-umd-red);
+    color: white;
+    border: none;
+    border-radius: var(--rounded);
+    font-weight: bold;
+  }
+  .horizontal-divider {
+    border-right: var(--border);
+    height: 100%;
+    width: 0;
+    margin: 0 1rem;
+  }
+  .top-n {
+    width: 2rem;
+    border: var(--border);
+    border-radius: var(--rounded);
+  }
+  .progress {
+    display: flex;
+    flex-direction: column;
+  }
+</style>
