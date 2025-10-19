@@ -8,29 +8,34 @@
   import WeightsEntry from "$lib/components/WeightsEntry.svelte";
   import { Scheduler, type Section } from "$lib/scheduler";
   import { average, calculate_stats, STATS, type Stats } from "$lib/stats";
+  import { LocalStorage } from "$lib/storage.svelte";
 
-  let courses = $state([""]);
+  const DEFAULT_QUERY = {
+    courses: [""],
+    options: {
+      show_full: false,
+      allow_zeromin: false,
+      exclude_fc: true,
+      exclude_sg: true,
+      exclude_sm: true,
+    },
+    weights: Object.fromEntries(Object.keys(STATS).map((k) => [k, 1])),
+  };
+  let storage = new LocalStorage("schedule", DEFAULT_QUERY);
+
   let schedules: undefined | Promise<Section[][]> = $state();
   let show_groups = $state(false);
-  let options = $state({
-    show_full: false,
-    allow_zeromin: false,
-    exclude_fc: true,
-    exclude_sg: true,
-    exclude_sm: true,
-  });
   let top_n = $state(10);
-  let weights = $state(
-    Object.fromEntries(Object.keys(STATS).map((k) => [k, 1]))
-  );
 
   let progress: string[] = $state([]);
   const progress_cb = (msg: string) => (progress = [...progress, msg]);
   let scheduler = new Scheduler(progress_cb);
 
   async function generate() {
+    const courses = storage.current.courses;
+    const options = storage.current.options;
     progress = [];
-    const queries = courses.filter((c) => c.length > 0);
+    const queries = courses.filter((c: string) => c.length > 0);
     return await scheduler.generate(queries, options);
   }
 
@@ -48,6 +53,7 @@
   }
 
   function weighted_score(stats: Stats) {
+    const weights = storage.current.weights;
     return Object.entries(stats)
       .map(([k, v]) => weights[k] * STATS[k].normal(v))
       .reduce((a, b) => a + b, 0);
@@ -59,12 +65,15 @@
     <div><em>callisto schedule generator</em></div>
 
     <div>
-      <CourseEntry bind:courses submit={() => (schedules = generate())} />
+      <CourseEntry
+        bind:courses={storage.current.courses}
+        submit={() => (schedules = generate())}
+      />
     </div>
 
     <div>
       <Expandable title="Extra options">
-        <Options bind:options />
+        <Options bind:options={storage.current.options} />
       </Expandable>
     </div>
 
@@ -75,10 +84,16 @@
     </div>
 
     <div>
-      <WeightsEntry bind:weights />
+      <WeightsEntry bind:weights={storage.current.weights} />
     </div>
 
-    <div>
+    <div class="footer">
+      <button
+        class="reset-link"
+        onclick={() => (storage.current = DEFAULT_QUERY)}
+      >
+        reset all
+      </button>
       <Modal>
         {#snippet button()}
           <span style:color="#99a1af">about</span>
@@ -216,5 +231,13 @@
   .progress {
     display: flex;
     flex-direction: column;
+  }
+  .footer {
+    display: flex;
+    gap: 1rem;
+  }
+  .reset-link {
+    all: unset;
+    color: #99a1af;
   }
 </style>
