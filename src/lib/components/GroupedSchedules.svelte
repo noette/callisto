@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Section } from "$lib/scheduler";
+  import { SEMESTER, type Section } from "$lib/scheduler";
   import type { Stats } from "$lib/stats";
   import Calendar from "./Calendar.svelte";
   import Schedule from "./Schedule.svelte";
@@ -24,7 +24,8 @@
         if (
           !ret[i].find(
             (x) =>
-              x.course == schedule[i].course && x.section == schedule[i].section
+              x.course == schedule[i].course &&
+              x.section == schedule[i].section,
           )
         ) {
           ret[i].push(schedule[i]);
@@ -46,7 +47,7 @@
       <div class="section-info">
         <strong>
           <a
-            href={`https://app.testudo.umd.edu/soc/search?courseId=${section.course}&termId=202601&courseStartCompare=&courseStartMin=&courseStartAM=`}
+            href={`https://app.testudo.umd.edu/soc/search?courseId=${section.course}&termId=${SEMESTER}&courseStartCompare=&courseStartMin=&courseStartAM=`}
             target="_blank"
           >
             {section.course}

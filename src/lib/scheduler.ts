@@ -1,3 +1,5 @@
+export const SEMESTER = `202608`;
+
 export type CourseQuery = string;
 type QueryOptions = {
   show_full: boolean;
@@ -88,7 +90,7 @@ export class Scheduler {
 
   async generate(
     queries: CourseQuery[],
-    options: QueryOptions
+    options: QueryOptions,
   ): Promise<Section[][]> {
     await this.fetch_sections(queries.filter((q) => !(q in this.sections)));
 
@@ -107,14 +109,14 @@ export class Scheduler {
           (!options.exclude_fc || !s.section.startsWith("FC")) &&
           (!options.exclude_sg || !s.section.startsWith("ESG")) &&
           (!options.exclude_sm || !s.section.startsWith("ESM")) &&
-          (options.show_full || s.seats.open_seats > 0)
+          (options.show_full || s.seats.open_seats > 0),
       );
       schedules = sections.flatMap((section) => {
         const full = this.make_full_section(section);
         return schedules.flatMap((schedule) =>
           this.schedule_overlap(schedule, section, options.allow_zeromin)
             ? [[...schedule, full]]
-            : []
+            : [],
         );
       });
     }
@@ -124,13 +126,13 @@ export class Scheduler {
   schedule_overlap(
     schedule: Section[],
     section: Section,
-    allow_zeromin: boolean
+    allow_zeromin: boolean,
   ) {
     return (
       !schedule.some((s) => s.course === section.course) &&
       !check_overlap(
         [...schedule.map((s) => s.meetings), section.meetings],
-        allow_zeromin
+        allow_zeromin,
       )
     );
   }
@@ -142,7 +144,7 @@ export class Scheduler {
         return {
           ...this.instructors[i.name],
           gpa: calculate_gpa(
-            this.grades[i.name].filter((sem) => sem.course === section.course)
+            this.grades[i.name].filter((sem) => sem.course === section.course),
           ),
         };
       }),
@@ -156,7 +158,7 @@ export class Scheduler {
     this.progress(`Fetching data for ${codes.join(", ")}...`);
 
     const res = await fetch(
-      `https://api.jupiterp.com/v0/sections?courseCodes=${codes.join(",")}`
+      `https://api.jupiterp.com/v0/sections?courseCodes=${codes.join(",")}`,
     );
     const json: JupiterpSection[] = await res.json();
 
@@ -176,7 +178,7 @@ export class Scheduler {
                 {
                   name: name,
                 },
-              ]
+              ],
         ),
         seats: {
           open_seats: section.open_seats,
@@ -195,8 +197,8 @@ export class Scheduler {
 
     const res = await fetch(
       `https://api.jupiterp.com/v0/instructors?instructorNames=${names.join(
-        ","
-      )}`
+        ",",
+      )}`,
     );
     const json: JupiterpInstructor[] = await res.json();
 
@@ -214,7 +216,7 @@ export class Scheduler {
     }
     this.progress(`Fetching GPA data for ${name}...`);
     const res = await fetch(
-      `https://planetterp.com/api/v1/grades?professor=${name}`
+      `https://planetterp.com/api/v1/grades?professor=${name}`,
     );
     if (res.ok) {
       this.grades[name] = await res.json();
@@ -304,7 +306,7 @@ export function combine_times(meetings: Meetings[], remove_duplicates = false) {
     for (let i = 0; i < combined.days.length; i++) {
       combined.days[i] = [
         ...new Map(
-          combined.days[i].map((m) => [JSON.stringify(m), m])
+          combined.days[i].map((m) => [JSON.stringify(m), m]),
         ).values(),
       ];
     }

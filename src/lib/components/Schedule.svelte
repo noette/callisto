@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { type Section } from "$lib/scheduler";
+  import { SEMESTER, type Section } from "$lib/scheduler";
   import { STATS, type Stats } from "$lib/stats";
   import Calendar from "./Calendar.svelte";
 
@@ -16,7 +16,7 @@
       <div class="section-info">
         <strong>
           <a
-            href={`https://app.testudo.umd.edu/soc/search?courseId=${section.course}&termId=202601&courseStartCompare=&courseStartMin=&courseStartAM=`}
+            href={`https://app.testudo.umd.edu/soc/search?courseId=${section.course}&termId=${SEMESTER}&courseStartCompare=&courseStartMin=&courseStartAM=`}
             target="_blank"
           >
             {section.course}
