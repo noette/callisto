@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { SEMESTER } from "$lib/scheduler";
   import { tick } from "svelte";
 
   let { courses = $bindable(), submit } = $props();
@@ -9,6 +10,10 @@
 <div class="container">
   <div>
     <strong>Course codes</strong>
+    <em>
+      ({SEMESTER.slice(4) === "01" ? "Spring" : "Fall"}
+      {SEMESTER.slice(0, 4)})
+    </em>
   </div>
 
   {#each courses as course, i}

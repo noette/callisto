@@ -1,4 +1,14 @@
-export const SEMESTER = `202608`;
+const now = new Date();
+let year = now.getFullYear();
+const month = now.getMonth();
+let nextSemesterCode = "01";
+if (month >= 0 && month <= 7) {
+  nextSemesterCode = "08";
+} else {
+  nextSemesterCode = "01";
+  year += 1;
+}
+export const SEMESTER = `${year}${nextSemesterCode}`;
 
 export type CourseQuery = string;
 type QueryOptions = {
