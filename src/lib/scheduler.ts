@@ -96,14 +96,11 @@ export class Scheduler {
     queries: CourseQuery[],
     options: QueryOptions,
   ): Promise<Section[][]> {
-    await this.fetch_sections(queries.filter((q) => !(q in this.sections)));
+    if (queries.length === 0) {
+      throw new Error("No courses specified");
+    }
 
-    const profs = queries
-      .flatMap((q) => this.sections[q].flatMap((s) => s.instructors))
-      .map((i) => i.name)
-      .filter((i) => !(i in this.instructors));
-    const unique_profs = [...new Set(profs)];
-    await Promise.all(unique_profs.map((name) => this.fetch_prof(name)));
+    await this.fetch_sections(queries.filter((q) => !(q in this.sections)));
 
     let schedules: Section[][] = [[]];
     for (const query of queries) {
@@ -114,16 +111,51 @@ export class Scheduler {
           (!options.exclude_sm || !s.section.startsWith("ESM")) &&
           (options.show_full || s.seats.open_seats > 0),
       );
-      schedules = sections.flatMap((section) => {
-        const full = this.make_full_section(section);
-        return schedules.flatMap((schedule) =>
-          this.schedule_overlap(schedule, section, options.allow_zeromin)
-            ? [[...schedule, full]]
-            : [],
+
+      let nextSchedules: Section[][] = [];
+      const allConflicts = new Set<string>();
+
+      for (const section of sections) {
+        for (const schedule of schedules) {
+          if (this.schedule_overlap(schedule, section, options.allow_zeromin)) {
+            nextSchedules.push([...schedule, section]);
+          } else {
+            for (const existing of schedule) {
+              if (
+                !this.schedule_overlap(
+                  [existing],
+                  section,
+                  options.allow_zeromin,
+                )
+              ) {
+                allConflicts.add(`${existing.course} ${existing.section}`);
+              }
+            }
+          }
+        }
+      }
+
+      if (nextSchedules.length === 0) {
+        const conflictingNames = Array.from(allConflicts).join(", ");
+        throw new Error(
+          `Couldn't schedule ${query}. Overlaps with sections ${conflictingNames}`,
         );
-      });
+      }
+
+      schedules = nextSchedules;
     }
-    return schedules;
+
+    const profs = schedules
+      .flat()
+      .flatMap((s) => s.instructors)
+      .map((i) => i.name)
+      .filter((i) => !(i in this.instructors));
+    const unique_profs = [...new Set(profs)];
+    await Promise.all(unique_profs.map((name) => this.fetch_prof(name)));
+
+    return schedules.map((schedule) =>
+      schedule.map((s) => this.make_full_section(s)),
+    );
   }
 
   schedule_overlap(

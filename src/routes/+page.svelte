@@ -183,6 +183,10 @@
           {/each}
         {/if}
       {/if}
+    {:catch error}
+      <div class="progress">
+        <strong style="color: var(--color-umd-red)">{error}</strong>
+      </div>
     {/await}
   </div>
 </main>
