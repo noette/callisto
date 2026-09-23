@@ -45,10 +45,10 @@
         schedule
           .map(
             (section) =>
-              `${section.course}-${section.instructors.map((i) => i.name).join(",")}`
+              `${section.course}-${section.instructors.map((i) => i.name).join(",")}`,
           )
-          .join(" ")
-      )
+          .join(" "),
+      ),
     ).filter((x) => x !== undefined);
   }
 
@@ -98,7 +98,6 @@
         {#snippet button()}
           <span style:color="#99a1af">about</span>
         {/snippet}
-        <p>callisto schedule generator is developed by frederick zheng</p>
         <p>
           course and rating data from <a
             href="https://github.com/Jupiterp-UMD/api"

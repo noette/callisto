@@ -60,12 +60,6 @@ type JupiterpSection = {
   holdfile: number;
 };
 
-type JupiterpInstructor = {
-  name: string;
-  slug?: string;
-  average_rating?: number;
-};
-
 type PTGrade = {
   course: string;
   professor: string;
@@ -91,7 +85,7 @@ type PTGrade = {
 export class Scheduler {
   progress: (msg: string) => void;
   sections: { [code: string]: Section[] } = {};
-  instructors: { [name: string]: JupiterpInstructor } = {};
+  instructors: { [name: string]: Instructor } = {};
   grades: { [name: string]: PTGrade[] } = {};
 
   constructor(progress: (msg: string) => void) {
@@ -109,8 +103,7 @@ export class Scheduler {
       .map((i) => i.name)
       .filter((i) => !(i in this.instructors));
     const unique_profs = [...new Set(profs)];
-    await this.fetch_instructors(unique_profs);
-    await Promise.all(unique_profs.map((name) => this.fetch_grades(name)));
+    await Promise.all(unique_profs.map((name) => this.fetch_prof(name)));
 
     let schedules: Section[][] = [[]];
     for (const query of queries) {
@@ -168,7 +161,7 @@ export class Scheduler {
     this.progress(`Fetching data for ${codes.join(", ")}...`);
 
     const res = await fetch(
-      `https://api.jupiterp.com/v0/sections?courseCodes=${codes.join(",")}`,
+      `https://api.jupiterp.com/v1/sections?courseCodes=${codes.join(",")}`,
     );
     const json: JupiterpSection[] = await res.json();
 
@@ -199,37 +192,31 @@ export class Scheduler {
     }
   }
 
-  async fetch_instructors(names: string[]) {
-    if (names.length === 0) {
+  async fetch_prof(name: string) {
+    if (name in this.instructors) {
       return;
     }
-    this.progress(`Fetching rating data for ${names.join(", ")}...`);
 
-    const res = await fetch(
-      `https://api.jupiterp.com/v0/instructors?instructorNames=${names.join(
-        ",",
-      )}`,
+    this.progress(`Fetching ratings and GPA data for ${name}...`);
+    const rating_res = await fetch(
+      `https://planetterp.com/api/v1/professor?name=${name}`,
     );
-    const json: JupiterpInstructor[] = await res.json();
-
-    for (const name of names) {
+    if (rating_res.ok) {
+      const json = await rating_res.json();
+      this.instructors[name] = {
+        name: name,
+        slug: json.slug,
+        average_rating: json.average_rating,
+      };
+    } else {
       this.instructors[name] = { name: name };
     }
-    for (const instructor of json) {
-      this.instructors[instructor.name] = instructor;
-    }
-  }
 
-  async fetch_grades(name: string) {
-    if (name in this.grades) {
-      return;
-    }
-    this.progress(`Fetching GPA data for ${name}...`);
-    const res = await fetch(
+    const grades_res = await fetch(
       `https://planetterp.com/api/v1/grades?professor=${name}`,
     );
-    if (res.ok) {
-      this.grades[name] = await res.json();
+    if (grades_res.ok) {
+      this.grades[name] = await grades_res.json();
     } else {
       this.grades[name] = [];
     }
