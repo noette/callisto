@@ -1,6 +1,7 @@
 <script lang="ts">
   import { SEMESTER } from "$lib/scheduler";
   import { tick } from "svelte";
+  import Tooltip from "./Tooltip.svelte";
 
   let { courses = $bindable(), submit } = $props();
 
@@ -8,12 +9,19 @@
 </script>
 
 <div class="container">
-  <div>
+  <div class="label">
     <strong>Course codes</strong>
     <em>
       ({SEMESTER.slice(4) === "01" ? "Spring" : "Fall"}
       {SEMESTER.slice(0, 4)})
     </em>
+    <div style="flex: 1"></div>
+    <Tooltip>
+      Enter course codes, such as "ENEE323". Use a pipe to specify multiple
+      course options to choose one from, e.g. <span style="white-space: nowrap"
+        >"ENEE323|ENEE304"</span
+      >.
+    </Tooltip>
   </div>
 
   {#each courses as course, i}
@@ -70,5 +78,8 @@
     padding: 0.25rem;
     border-radius: var(--rounded);
     border: var(--border);
+  }
+  .label {
+    display: flex;
   }
 </style>

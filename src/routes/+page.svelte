@@ -35,7 +35,16 @@
     const courses = storage.current.courses;
     const options = storage.current.options;
     progress = [];
-    const queries = courses.filter((c: string) => c.length > 0);
+
+    for (const query of courses) {
+      if (!query.match(/^([A-Za-z]{4}[0-9]{3}[A-Za-z]*[|]?)*$/)) {
+        throw new Error(`Invalid course query format: ${query}`);
+      }
+    }
+
+    const queries = courses
+      .filter((c: string) => c.length > 0)
+      .map((c: string) => c.toUpperCase().split("|"));
     return await scheduler.generate(queries, options);
   }
 

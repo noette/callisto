@@ -10,7 +10,7 @@ if (month >= 0 && month <= 7) {
 }
 export const SEMESTER = `${year}${nextSemesterCode}`;
 
-export type CourseQuery = string;
+export type CourseQuery = string[];
 type QueryOptions = {
   show_full: boolean;
   allow_zeromin: boolean;
@@ -100,17 +100,21 @@ export class Scheduler {
       throw new Error("No courses specified");
     }
 
-    await this.fetch_sections(queries.filter((q) => !(q in this.sections)));
+    await this.fetch_sections(
+      queries.flat().filter((q) => !(q in this.sections)),
+    );
 
     let schedules: Section[][] = [[]];
     for (const query of queries) {
-      const sections = this.sections[query].filter(
-        (s) =>
-          (!options.exclude_fc || !s.section.startsWith("FC")) &&
-          (!options.exclude_sg || !s.section.startsWith("ESG")) &&
-          (!options.exclude_sm || !s.section.startsWith("ESM")) &&
-          (options.show_full || s.seats.open_seats > 0),
-      );
+      const sections = query
+        .flatMap((q) => this.sections[q])
+        .filter(
+          (s) =>
+            (!options.exclude_fc || !s.section.startsWith("FC")) &&
+            (!options.exclude_sg || !s.section.startsWith("ESG")) &&
+            (!options.exclude_sm || !s.section.startsWith("ESM")) &&
+            (options.show_full || s.seats.open_seats > 0),
+        );
 
       let nextSchedules: Section[][] = [];
       const allConflicts = new Set<string>();
