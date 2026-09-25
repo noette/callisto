@@ -211,6 +211,9 @@
     padding: 1.25rem;
     gap: 1.25rem;
     width: 25%;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
   }
   .schedules {
     background: #f3f4f6;

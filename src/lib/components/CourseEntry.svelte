@@ -81,5 +81,6 @@
   }
   .label {
     display: flex;
+    gap: 0.5em;
   }
 </style>

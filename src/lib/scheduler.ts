@@ -149,6 +149,18 @@ export class Scheduler {
       schedules = nextSchedules;
     }
 
+    const seenKeys = new Set<string>();
+    schedules = schedules.filter((s) => {
+      const key = s
+        .map((x) => `${x.course}-${x.section}`)
+        .sort()
+        .join(",");
+      console.log(key);
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
+
     const profs = schedules
       .flat()
       .flatMap((s) => s.instructors)
